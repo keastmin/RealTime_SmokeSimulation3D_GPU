@@ -10,6 +10,7 @@ void main(){
 	if(colorMode){
 		color = vec4(1.0, 1.0, 1.0, 0.3);
 	} else {
-		color = vec4(fragmentColor, 0.07);
+		color = vec4(fragmentColor, 0.1);
+		//color = vec4(1.0, 1.0, 1.0, 0.5);
 	}
 }

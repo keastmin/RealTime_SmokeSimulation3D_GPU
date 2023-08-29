@@ -14,7 +14,7 @@
 #define IX(i, j, k) ((i) + (N+2)*(j) + (N+2)*(N+2)*(k))
 
 // 그리드 사이즈 : SIZE * SIZE * SIZE (3차원)
-#define SIZE 70
+#define SIZE 50
 
 // 윈도우 크기
 #define WIDTH 800
@@ -40,7 +40,7 @@ const static int width = WIDTH;
 const static int height = HEIGHT;
 
 // mode == 0 : 연기, mode == 1 : 속도장
-static int mode = 1;
+static int mode = 0;
 
 // addforce == 0 : 외력 없음, addforce == 1 : 외력 추가
 static int addforce = 0;
@@ -298,7 +298,7 @@ __global__ void init_dens(int hN, glm::vec3* dens) {
 	if (i < hN && j < hN && k < hN) {
 		float x = ((i + 1) - 0.5f) * h;
 		float y = ((j + 1) - 0.5f) * h;
-		float z = ((z + 1) - 0.5f) * h;
+		float z = ((k + 1) - 0.5f) * h;
 
 		glm::vec3 p000(x, y, z);
 		glm::vec3 p100(x + h, y, z);
@@ -309,14 +309,125 @@ __global__ void init_dens(int hN, glm::vec3* dens) {
 		glm::vec3 p011(x, y + h, z + h);
 		glm::vec3 p001(x, y, z + h);
 
+		int localIdx = idx * 36;
+		addCubeFaceDevice(p000, p010, p110, p100, dens, localIdx);
+		addCubeFaceDevice(p001, p011, p111, p101, dens, localIdx);
+		addCubeFaceDevice(p000, p001, p101, p100, dens, localIdx);
+		addCubeFaceDevice(p010, p011, p111, p110, dens, localIdx);
+		addCubeFaceDevice(p000, p010, p011, p001, dens, localIdx);
+		addCubeFaceDevice(p100, p110, p111, p101, dens, localIdx);
+	
+	//	// 1
+	//	dens[6 * idx + 0] = p000;
+	//	dens[6 * idx + 1] = p010;
+	//	dens[6 * idx + 2] = p110;
 
-		//addCubeFaceDevice(p000, p010, p110, p100, dens, )
+	//	dens[6 * idx + 3] = p110;
+	//	dens[6 * idx + 4] = p100;
+	//	dens[6 * idx + 5] = p000;
+
+	//	// 2
+	//	dens[36 * idx + 6] = p001;
+	//	dens[36 * idx + 7] = p011;
+	//	dens[36 * idx + 8] = p111;
+
+	//	dens[36 * idx + 9] = p111;
+	//	dens[36 * idx + 10] = p101;
+	//	dens[36 * idx + 11] = p001;
+
+	//	// 3
+	//	dens[36 * idx + 12] = p000;
+	//	dens[36 * idx + 13] = p001;
+	//	dens[36 * idx + 14] = p101;
+
+	//	dens[36 * idx + 15] = p101;
+	//	dens[36 * idx + 16] = p100;
+	//	dens[36 * idx + 17] = p000;
+
+	//	// 4
+	//	dens[36 * idx + 18] = p010;
+	//	dens[36 * idx + 19] = p011;
+	//	dens[36 * idx + 20] = p111;
+
+	//	dens[36 * idx + 21] = p111;
+	//	dens[36 * idx + 22] = p110;
+	//	dens[36 * idx + 23] = p010;
+
+	//	// 5
+	//	dens[36 * idx + 24] = p000;
+	//	dens[36 * idx + 25] = p010;
+	//	dens[36 * idx + 26] = p011;
+
+	//	dens[36 * idx + 27] = p011;
+	//	dens[36 * idx + 28] = p001;
+	//	dens[36 * idx + 29] = p000;
+
+	//	// 6
+	//	dens[36 * idx + 30] = p100;
+	//	dens[36 * idx + 31] = p110;
+	//	dens[36 * idx + 32] = p111;
+
+	//	dens[36 * idx + 33] = p111;
+	//	dens[36 * idx + 34] = p101;
+	//	dens[36 * idx + 35] = p100;
 	}
 }
-/* ----------------------------------------------------- */
-__global__ void debug(double* u) {
-	printf("%lf\n", u[IX(15, 2, 15)]);
+
+// density color 초기화 커널 함수
+__global__ void init_dens_color(int hN, glm::vec3* cDens) {
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	int k = blockIdx.z * blockDim.z + threadIdx.z;
+	int idx = IX(i, j, k);
+	if (i < hN && j < hN && k < hN) {
+		int localIdx = 36 * idx;
+		glm::vec3 icolor(0.0f, 0.0f, 0.0f);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+	}
 }
+
+// density color 업데이트 커널 함수
+__global__ void update_dens_color(int hN, glm::vec3* cDens, double* kdens){
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	int k = blockIdx.z * blockDim.z + threadIdx.z;
+	double d000, d100, d110, d101, d111, d010, d011, d001;
+	int idx = IX(i, j, k);
+	if (i < hN && j < hN && k < hN) {
+		d000 = kdens[IX(i + 1, j + 1, k + 1)];
+		d100 = kdens[IX(i + 2, j + 1, k + 1)];
+		d110 = kdens[IX(i + 2, j + 2, k + 1)];
+		d101 = kdens[IX(i + 2, j + 1, k + 2)];
+		d111 = kdens[IX(i + 2, j + 2, k + 2)];
+		d010 = kdens[IX(i + 1, j + 2, k + 1)];
+		d011 = kdens[IX(i + 1, j + 2, k + 2)];
+		d001 = kdens[IX(i + 1, j + 1, k + 2)];
+
+		glm::vec3 p000(d000, d000, d000);
+		glm::vec3 p100(d100, d100, d100);
+		glm::vec3 p110(d110, d110, d110);
+		glm::vec3 p101(d101, d101, d101);
+		glm::vec3 p111(d111, d111, d111);
+		glm::vec3 p010(d010, d010, d010);
+		glm::vec3 p011(d011, d011, d011);
+		glm::vec3 p001(d001, d001, d001);
+
+		int localIdx = 36 * idx;
+		addCubeFaceDevice(p000, p010, p110, p100, cDens, localIdx);
+		addCubeFaceDevice(p001, p011, p111, p101, cDens, localIdx);
+		addCubeFaceDevice(p000, p001, p101, p100, cDens, localIdx);
+		addCubeFaceDevice(p010, p011, p111, p110, cDens, localIdx);
+		addCubeFaceDevice(p000, p010, p011, p001, cDens, localIdx);
+		addCubeFaceDevice(p100, p110, p111, p101, cDens, localIdx);
+	}
+}
+
+/* ----------------------------------------------------- */
 
 // 시뮬레이션 함수
 void sim_fluid() {
@@ -400,18 +511,35 @@ int main() {
 	/* --------------------------------------------------- */
 
 	/* ----------------밀도장 표현 버퍼 정의---------------- */
-	//GLuint densitybuffer;
-	//glGenBuffers(1, &densitybuffer);
-	//glBindBuffer(GL_ARRAY_BUFFER, densitybuffer);
-	//glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec3), NULL, GL_STATIC_DRAW);
-
-	//cudaGraphicsResource* cudaVBODens;
-	//size_t numByteDens;
-	//cudaGraphicsGLRegisterBuffer(&cudaVBODens, densitybuffer, cudaGraphicsMapFlagsWriteDiscard);
-	//cudaGraphicsMapResources(1, &cudaVBODens, 0);
-	//cudaGraphicsResourceGetMappedPointer((void**)&dens_buffer, &numByteDens, cudaVBODens);
+	GLuint densitybuffer;
+	glGenBuffers(1, &densitybuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, densitybuffer);
+	glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec3), NULL, GL_STATIC_DRAW);
+	//cudaError_t err;
+	cudaGraphicsResource* cudaVBODens;
+	size_t numByteDens;
+	cudaGraphicsGLRegisterBuffer(&cudaVBODens, densitybuffer, cudaGraphicsMapFlagsWriteDiscard);
+	cudaGraphicsMapResources(1, &cudaVBODens, 0);
+	cudaGraphicsResourceGetMappedPointer((void**)&dens_buffer, &numByteDens, cudaVBODens);
 	
-	//init_dens
+	init_dens<<<gridDim, blockDim>>>(N, dens_buffer);
+	cudaDeviceSynchronize();
+	cudaGraphicsUnmapResources(1, &cudaVBODens, 0);
+
+	GLuint densitycolorbuffer;
+	glGenBuffers(1, &densitycolorbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, densitycolorbuffer);
+	glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	
+	cudaGraphicsResource* cudaVBODensColor;
+	size_t numByteDensColor;
+	cudaGraphicsGLRegisterBuffer(&cudaVBODensColor, densitycolorbuffer, cudaGraphicsMapFlagsWriteDiscard);
+	cudaGraphicsMapResources(1, &cudaVBODensColor, 0);
+	cudaGraphicsResourceGetMappedPointer((void**)&dens_color_buffer, &numByteDensColor, cudaVBODensColor);
+
+	init_dens_color<<<gridDim, blockDim>>>(N, dens_color_buffer);
+	cudaDeviceSynchronize();
+	cudaGraphicsUnmapResources(1, &cudaVBODensColor, 0);
 	/* --------------------------------------------------- */
 
 	// 키보드 콜백 함수 호출
@@ -435,8 +563,43 @@ int main() {
 
 		// 시뮬레이션 반복
 		sim_fluid();
-		
-		//debug<<<1, 1>>>(u);
+
+		if (mode == 0) {
+			glUniform1i(velColor, GL_FALSE);
+
+			cudaGraphicsMapResources(1, &cudaVBODensColor, 0);
+			cudaGraphicsResourceGetMappedPointer((void**)&dens_color_buffer, &numByteDensColor, cudaVBODensColor);
+			update_dens_color<<<gridDim, blockDim >>>(N, dens_color_buffer, dens);
+			cudaDeviceSynchronize();
+			cudaGraphicsUnmapResources(1, &cudaVBODensColor, 0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, densitybuffer);
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(
+				0,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)0
+			);
+
+			glBindBuffer(GL_ARRAY_BUFFER, densitycolorbuffer);
+			glEnableVertexAttribArray(1);
+			glVertexAttribPointer(
+				1,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)0
+			);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36 * (N + 2) * (N + 2) * (N + 2));
+
+			glDisableVertexAttribArray(0);
+			glDisableVertexAttribArray(1);
+		}
 		
 		if (mode == 1) {
 			glUniform1i(velColor, GL_TRUE);
@@ -472,7 +635,8 @@ int main() {
 	glDeleteProgram(programID);
 	glDeleteVertexArrays(1, &VertexArrayID);
 	glDeleteBuffers(1, &velocitybuffer);
-	//glDeleteBuffers(1, &densitybuffer);
+	glDeleteBuffers(1, &densitybuffer);
+	glDeleteBuffers(1, &densitycolorbuffer);
 	glfwDestroyWindow(window);
 	free_data();
 	glfwTerminate();

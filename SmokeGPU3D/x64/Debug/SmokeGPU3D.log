@@ -210,10 +210,6 @@ C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\Dependencies\GLM\glm\detail/ty
     		__declspec(__device__) __declspec(__host__)  vec<1, T, Q> & operator=(vec const& v) = default;
     		                                  ^
   
-C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(301): warning #549-D: variable "z" is used before its value is set
-    		float z = ((z + 1) - 0.5f) * h;
-    		            ^
-  
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
@@ -425,28 +421,12 @@ C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\Dependencies\GLM\glm\detail/ty
     		__declspec(__device__) __declspec(__host__)  vec<1, T, Q> & operator=(vec const& v) = default;
     		                                  ^
   
-C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(301): warning #549-D: variable "z" is used before its value is set
-    		float z = ((z + 1) - 0.5f) * h;
-    		            ^
-  
-C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(296): warning #177-D: variable "idx" was declared but never referenced
-    	int idx = ((i) + (N+2)*(j) + (N+2)*(N+2)*(k));
-    	    ^
-  
 C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(35): warning #177-D: variable "source_alp" was declared but never referenced
     static double source_alp = 0.03f;
                   ^
   
-C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(50): warning #177-D: variable "dens_buffer" was declared but never referenced
-    static glm::vec3* dens_buffer;
-                      ^
-  
-C:\Users\kemin\source\repos\SmokeGPU3D\SmokeGPU3D\main.cu(52): warning #177-D: variable "dens_color_buffer" was declared but never referenced
-    static glm::vec3* dens_color_buffer;
-                      ^
-  
   main.cu
-  tmpxft_000044c0_00000000-7_main.cudafe1.cpp
+  tmpxft_00004b08_00000000-7_main.cudafe1.cpp
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
 C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include\driver_types.h(1329): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
