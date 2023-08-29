@@ -22,7 +22,7 @@ float verticalAngle = 0.0f;
 // ÃÊ±â FOV°ª
 float initialFoV = 45.0f;
 
-float speed = 2.5f;
+float speed = 1.5f;
 float mouseSpeed = 0.05f;
 
 void init_position() {

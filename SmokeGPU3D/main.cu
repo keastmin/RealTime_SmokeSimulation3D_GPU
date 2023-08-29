@@ -14,7 +14,7 @@
 #define IX(i, j, k) ((i) + (N+2)*(j) + (N+2)*(N+2)*(k))
 
 // 그리드 사이즈 : SIZE * SIZE * SIZE (3차원)
-#define SIZE 50
+#define SIZE 70
 
 // 윈도우 크기
 #define WIDTH 800
@@ -27,11 +27,11 @@ static double* dens, * dens_prev;
 
 // 상수 데이터
 static const int N = SIZE;
-static double dt = 0.08f;
+static double dt = 0.1f;
 static double diff = 0.0f;
 static double visc = 0.0f;
-static double force = 10.0f;
-static double source = 50.0f;
+static double force = 20.0f;
+static double source = 100.0f;
 static double source_alp = 0.03f;
 /* -------------------------------------------- */
 
@@ -215,6 +215,7 @@ void add_force_source(double* d, double* u, double* v, double* w) {
 	cudaMemset(v, 0, size * sizeof(double));
 	cudaMemset(w, 0, size * sizeof(double));
 	cudaMemset(d, 0, size * sizeof(double));
+	cudaDeviceSynchronize();
 
 	if (addforce == 1) {
 		i = N / 2;
@@ -228,6 +229,11 @@ void add_force_source(double* d, double* u, double* v, double* w) {
 		double forceValue = force * 3;
 		double sourceValue = source;
 		set_force_source<<<1, 1>>>(d, i, j + 3, k, sourceValue, v, i, j, k, forceValue);
+		
+		//i = N / 2;
+		//j = N / 2;
+		//k = N - 3;
+		//set_force_source << <1, 1 >> > (d, i, j + 3, k, sourceValue, v, i, j, k, forceValue);
 	}
 }
 /* ------------------------------------------------ */
@@ -270,8 +276,6 @@ __global__ void update_vel(glm::vec3* vel, int hN, double* ku, double* kv, doubl
 		vel[2 * idx + 1].x = dyvel[idx].x + ku[velIdx];
 		vel[2 * idx + 1].y = dyvel[idx].y + kv[velIdx];
 		vel[2 * idx + 1].z = dyvel[idx].z + kw[velIdx];		
-
-		//vel[2 * idx + 1].x += 0.004f;
 	}
 }
 /* ---------------------------------------------------- */
@@ -316,60 +320,6 @@ __global__ void init_dens(int hN, glm::vec3* dens) {
 		addCubeFaceDevice(p010, p011, p111, p110, dens, localIdx);
 		addCubeFaceDevice(p000, p010, p011, p001, dens, localIdx);
 		addCubeFaceDevice(p100, p110, p111, p101, dens, localIdx);
-	
-	//	// 1
-	//	dens[6 * idx + 0] = p000;
-	//	dens[6 * idx + 1] = p010;
-	//	dens[6 * idx + 2] = p110;
-
-	//	dens[6 * idx + 3] = p110;
-	//	dens[6 * idx + 4] = p100;
-	//	dens[6 * idx + 5] = p000;
-
-	//	// 2
-	//	dens[36 * idx + 6] = p001;
-	//	dens[36 * idx + 7] = p011;
-	//	dens[36 * idx + 8] = p111;
-
-	//	dens[36 * idx + 9] = p111;
-	//	dens[36 * idx + 10] = p101;
-	//	dens[36 * idx + 11] = p001;
-
-	//	// 3
-	//	dens[36 * idx + 12] = p000;
-	//	dens[36 * idx + 13] = p001;
-	//	dens[36 * idx + 14] = p101;
-
-	//	dens[36 * idx + 15] = p101;
-	//	dens[36 * idx + 16] = p100;
-	//	dens[36 * idx + 17] = p000;
-
-	//	// 4
-	//	dens[36 * idx + 18] = p010;
-	//	dens[36 * idx + 19] = p011;
-	//	dens[36 * idx + 20] = p111;
-
-	//	dens[36 * idx + 21] = p111;
-	//	dens[36 * idx + 22] = p110;
-	//	dens[36 * idx + 23] = p010;
-
-	//	// 5
-	//	dens[36 * idx + 24] = p000;
-	//	dens[36 * idx + 25] = p010;
-	//	dens[36 * idx + 26] = p011;
-
-	//	dens[36 * idx + 27] = p011;
-	//	dens[36 * idx + 28] = p001;
-	//	dens[36 * idx + 29] = p000;
-
-	//	// 6
-	//	dens[36 * idx + 30] = p100;
-	//	dens[36 * idx + 31] = p110;
-	//	dens[36 * idx + 32] = p111;
-
-	//	dens[36 * idx + 33] = p111;
-	//	dens[36 * idx + 34] = p101;
-	//	dens[36 * idx + 35] = p100;
 	}
 }
 
@@ -481,6 +431,7 @@ int main() {
 	GLuint programID = LoadShaders("VertexShaderSL.txt", "FragmentShaderSL.txt");
 	GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 	GLuint velColor = glGetUniformLocation(programID, "colorMode");
+	GLuint alpValue = glGetUniformLocation(programID, "alphaValue");
 
 	// 사용할 그래픽 카드
 	cudaSetDevice(0);
@@ -515,7 +466,7 @@ int main() {
 	glGenBuffers(1, &densitybuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, densitybuffer);
 	glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec3), NULL, GL_STATIC_DRAW);
-	//cudaError_t err;
+
 	cudaGraphicsResource* cudaVBODens;
 	size_t numByteDens;
 	cudaGraphicsGLRegisterBuffer(&cudaVBODens, densitybuffer, cudaGraphicsMapFlagsWriteDiscard);
@@ -566,6 +517,7 @@ int main() {
 
 		if (mode == 0) {
 			glUniform1i(velColor, GL_FALSE);
+			glUniform1d(alpValue, source_alp);
 
 			cudaGraphicsMapResources(1, &cudaVBODensColor, 0);
 			cudaGraphicsResourceGetMappedPointer((void**)&dens_color_buffer, &numByteDensColor, cudaVBODensColor);
@@ -625,7 +577,6 @@ int main() {
 
 			glDisableVertexAttribArray(0);
 		}
-
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
