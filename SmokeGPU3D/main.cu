@@ -14,7 +14,7 @@
 #define IX(i, j, k) ((i) + (N+2)*(j) + (N+2)*(N+2)*(k))
 
 // 그리드 사이즈 : SIZE * SIZE * SIZE (3차원)
-#define SIZE 70
+#define SIZE 50
 
 // 윈도우 크기
 #define WIDTH 800
@@ -67,8 +67,10 @@ GLFWwindow* window;
 void free_data() {
 	if (u) cudaFree(u);
 	if (v) cudaFree(v);
+	if (v) cudaFree(w);
 	if (u_prev) cudaFree(u_prev);
 	if (v_prev) cudaFree(v_prev);
+	if (w_prev) cudaFree(w_prev);
 	if (dens) cudaFree(dens);
 	if (dens_prev) cudaFree(dens_prev);
 	if (static_vel_buffer) cudaFree(static_vel_buffer);
@@ -366,6 +368,15 @@ __global__ void update_dens_color(int hN, glm::vec3* cDens, double* kdens){
 		glm::vec3 p010(d010, d010, d010);
 		glm::vec3 p011(d011, d011, d011);
 		glm::vec3 p001(d001, d001, d001);
+
+		//glm::vec3 p000(d000 + 0.7, d000, d000);
+		//glm::vec3 p100(d100 + 0.7, d100, d100);
+		//glm::vec3 p110(d110 + 0.7, d110, d110);
+		//glm::vec3 p101(d101 + 0.7, d101, d101);
+		//glm::vec3 p111(d111 + 0.7, d111, d111);
+		//glm::vec3 p010(d010 + 0.7, d010, d010);
+		//glm::vec3 p011(d011 + 0.7, d011, d011);
+		//glm::vec3 p001(d001 + 0.7, d001, d001);
 
 		int localIdx = 36 * idx;
 		addCubeFaceDevice(p000, p010, p110, p100, cDens, localIdx);
