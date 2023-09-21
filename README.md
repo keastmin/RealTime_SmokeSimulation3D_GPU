@@ -33,7 +33,7 @@ Jos Stam의 논문 기반으로 작성된 Real Time Smoke Simulation을 CUDA를 
 
 **추가 사항**  
 - main 코드의 add_force_source 함수를 통해 외력의 방향을 수정할 수 있음  
-- FragmentShaderSL.txt 파일을 통해 투명도를 조절할 수 있음  
+- FragmentShaderSL.txt 파일과 메인 소스 파일의 density 관련 함수와 코드의 수정을 통해 투명도를 조절할 수 있음  
 
 **결과**  
 ![Image Alt Text](https://github.com/keastmin/RealTime_SmokeSimulation3D_GPU/blob/main/image/SmokeGPU3D.jpg)  
