@@ -49,7 +49,7 @@ static int addforce = 0;
 // 밀도의 고정 위치 버퍼
 static glm::vec3* dens_buffer;
 // 밀도의 색상 버퍼
-static glm::vec3* dens_color_buffer;
+static glm::vec4* dens_color_buffer;
 /* --------------------- */
 
 // 속도장의 고정 위치 버퍼
@@ -294,6 +294,16 @@ __device__ void addCubeFaceDevice(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm:
 	buffer[index++] = p0;
 }
 
+__device__ void addCubeFaceColorDevice(glm::vec4 p0, glm::vec4 p1, glm::vec4 p2, glm::vec4 p3, glm::vec4* buffer, int& index) {
+	buffer[index++] = p0;
+	buffer[index++] = p1;
+	buffer[index++] = p2;
+
+	buffer[index++] = p2;
+	buffer[index++] = p3;
+	buffer[index++] = p0;
+}
+
 // density 초기화 커널 함수
 __global__ void init_dens(int hN, glm::vec3* dens) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -326,25 +336,25 @@ __global__ void init_dens(int hN, glm::vec3* dens) {
 }
 
 // density color 초기화 커널 함수
-__global__ void init_dens_color(int hN, glm::vec3* cDens) {
+__global__ void init_dens_color(int hN, glm::vec4* cDens) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	int k = blockIdx.z * blockDim.z + threadIdx.z;
 	int idx = IX(i, j, k);
 	if (i < hN && j < hN && k < hN) {
 		int localIdx = 36 * idx;
-		glm::vec3 icolor(0.0f, 0.0f, 0.0f);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
-		addCubeFaceDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		glm::vec4 icolor(0.0f, 0.0f, 0.0f, 1.0f);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
+		addCubeFaceColorDevice(icolor, icolor, icolor, icolor, cDens, localIdx);
 	}
 }
 
 // density color 업데이트 커널 함수
-__global__ void update_dens_color(int hN, glm::vec3* cDens, double* kdens){
+__global__ void update_dens_color(int hN, glm::vec4* cDens, double* kdens){
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 	int k = blockIdx.z * blockDim.z + threadIdx.z;
@@ -360,31 +370,22 @@ __global__ void update_dens_color(int hN, glm::vec3* cDens, double* kdens){
 		d011 = kdens[IX(i + 1, j + 2, k + 2)];
 		d001 = kdens[IX(i + 1, j + 1, k + 2)];
 
-		glm::vec3 p000(d000, d000, d000);
-		glm::vec3 p100(d100, d100, d100);
-		glm::vec3 p110(d110, d110, d110);
-		glm::vec3 p101(d101, d101, d101);
-		glm::vec3 p111(d111, d111, d111);
-		glm::vec3 p010(d010, d010, d010);
-		glm::vec3 p011(d011, d011, d011);
-		glm::vec3 p001(d001, d001, d001);
-
-		//glm::vec3 p000(d000 + 0.7, d000, d000);
-		//glm::vec3 p100(d100 + 0.7, d100, d100);
-		//glm::vec3 p110(d110 + 0.7, d110, d110);
-		//glm::vec3 p101(d101 + 0.7, d101, d101);
-		//glm::vec3 p111(d111 + 0.7, d111, d111);
-		//glm::vec3 p010(d010 + 0.7, d010, d010);
-		//glm::vec3 p011(d011 + 0.7, d011, d011);
-		//glm::vec3 p001(d001 + 0.7, d001, d001);
+		glm::vec4 p000(d000, d000, d000, d000);
+		glm::vec4 p100(d100, d100, d100, d100);
+		glm::vec4 p110(d110, d110, d110, d110);
+		glm::vec4 p101(d101, d101, d101, d101);
+		glm::vec4 p111(d111, d111, d111, d111);
+		glm::vec4 p010(d010, d010, d010, d010);
+		glm::vec4 p011(d011, d011, d011, d011);
+		glm::vec4 p001(d001, d001, d001, d001);
 
 		int localIdx = 36 * idx;
-		addCubeFaceDevice(p000, p010, p110, p100, cDens, localIdx);
-		addCubeFaceDevice(p001, p011, p111, p101, cDens, localIdx);
-		addCubeFaceDevice(p000, p001, p101, p100, cDens, localIdx);
-		addCubeFaceDevice(p010, p011, p111, p110, cDens, localIdx);
-		addCubeFaceDevice(p000, p010, p011, p001, cDens, localIdx);
-		addCubeFaceDevice(p100, p110, p111, p101, cDens, localIdx);
+		addCubeFaceColorDevice(p000, p010, p110, p100, cDens, localIdx);
+		addCubeFaceColorDevice(p001, p011, p111, p101, cDens, localIdx);
+		addCubeFaceColorDevice(p000, p001, p101, p100, cDens, localIdx);
+		addCubeFaceColorDevice(p010, p011, p111, p110, cDens, localIdx);
+		addCubeFaceColorDevice(p000, p010, p011, p001, cDens, localIdx);
+		addCubeFaceColorDevice(p100, p110, p111, p101, cDens, localIdx);
 	}
 }
 
@@ -491,7 +492,7 @@ int main() {
 	GLuint densitycolorbuffer;
 	glGenBuffers(1, &densitycolorbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, densitycolorbuffer);
-	glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec3), NULL, GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36 * (N + 2) * (N + 2) * (N + 2) * sizeof(glm::vec4), NULL, GL_STREAM_DRAW);
 	
 	cudaGraphicsResource* cudaVBODensColor;
 	size_t numByteDensColor;
@@ -508,7 +509,7 @@ int main() {
 	glfwSetKeyCallback(window, key_callback);
 	// 솔버 데이터 업데이트 및 그리기 (while문 ESC로 종료)
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE); // Stick Keys 활성화
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClearColor(0.3f, 0.3f, 0.3f, 0.3f);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	do {
@@ -528,7 +529,7 @@ int main() {
 
 		if (mode == 0) {
 			glUniform1i(velColor, GL_FALSE);
-			glUniform1d(alpValue, source_alp);
+			//glUniform1d(alpValue, source_alp);
 
 			cudaGraphicsMapResources(1, &cudaVBODensColor, 0);
 			cudaGraphicsResourceGetMappedPointer((void**)&dens_color_buffer, &numByteDensColor, cudaVBODensColor);
@@ -551,7 +552,7 @@ int main() {
 			glEnableVertexAttribArray(1);
 			glVertexAttribPointer(
 				1,
-				3,
+				4,
 				GL_FLOAT,
 				GL_FALSE,
 				0,
